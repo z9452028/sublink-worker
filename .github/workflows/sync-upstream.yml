@@ -1,0 +1,33 @@
+name: Sync upstream
+
+on:
+  schedule:
+    - cron: '23 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Merge upstream main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add upstream https://github.com/7Sageer/sublink-worker.git
+          git fetch upstream main
+          if git merge --no-edit upstream/main; then
+            git push origin main
+            echo "SYNC_OK"
+          else
+            git merge --abort || true
+            echo "::error::Upstream merge conflict, resolve manually with Sync fork."
+            exit 1
+          fi
